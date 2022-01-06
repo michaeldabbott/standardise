@@ -150,7 +150,7 @@ type FactoryOption interface{ apply(p *factory) }
 func WithLogger(l Logger) FactoryOption { return loggerOption{logger: l} }
 
 // WithTracer provides option to provide a tracer implementation. Noop is default
-func WithTracer(t opentracing.Tracer) FactoryOption { return tracerOption{tracer: t} }
+//func WithTracer(t opentracing.Tracer) FactoryOption { return tracerOption{tracer: t} }
 
 // WithConfig provides option to provide a server configuration.
 func WithConfig(c Config) FactoryOption { return configOption{c} }
