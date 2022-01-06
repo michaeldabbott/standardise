@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -26,6 +25,7 @@ type Factory interface {
 type factory struct {
 	config   Config
 	routerFn func() Handler
+	logger   Logger
 }
 
 func NewFactory(opts ...FactoryOption) Factory {
@@ -35,6 +35,7 @@ func NewFactory(opts ...FactoryOption) Factory {
 			r := chi.NewRouter()
 			return r
 		},
+		logger: NoopLogger{},
 	}
 
 	for _, opt := range opts {
@@ -50,6 +51,7 @@ type check func(http.HandlerFunc) http.HandlerFunc
 
 type Server struct {
 	Router         Handler
+	logger         Logger
 	healthCheck    check
 	readinessCheck check
 	alivenessCheck check
@@ -101,17 +103,14 @@ func (s *Server) Serve(ctx context.Context) error { //Take serve options
 	errs := make(chan error)
 	go func() {
 		if err := svr.ListenAndServe(); err != http.ErrServerClosed {
-			log.Println("server failed to start up - error ", err)
-			//s.logger.Error(ctx, "server failed to start up", "error", err)
+			s.logger.Error(ctx, "server failed to start up", "error", err)
 			errs <- err
 		} else {
 			errs <- nil
 		}
 	}()
 
-	log.Println("server started successfully - port ", port)
-
-	//s.logger.Info(ctx, "server started successfully", "port", port)
+	s.logger.Info(ctx, "server started successfully", "port", port)
 
 	go func() {
 		errs <- s.gracefulShutdown(ctx, &svr)
@@ -135,15 +134,6 @@ func (s *Server) timeoutMiddleware() func(http.Handler) http.Handler {
 	}
 }
 
-//func (s *Server) getHandler(ctx context.Context) http.Handler {
-//
-//	s.Router.Use(s.timeoutMiddleware())
-//	s.Router.Use(s.tracingMiddleware())
-//	//h = s.profilingMiddleware()(h)
-//	//Add other global middleware here
-//	return s.Router
-//}
-
 func (s *Server) gracefulShutdown(ctx context.Context, server *http.Server) error {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -157,14 +147,13 @@ func (s *Server) gracefulShutdown(ctx context.Context, server *http.Server) erro
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {
-
-		//s.logger.Error(
-		//	ctx,
-		//	"Error while gracefully shutting down server, forcing shutdown because of error",
-		//	"err", err)
+		s.logger.Error(
+			ctx,
+			"Error while gracefully shutting down server, forcing shutdown because of error",
+			"err", err)
 		return err
 	}
-	//s.logger.Info(ctx, "server exited successfully")
+	s.logger.Info(ctx, "server exited successfully")
 	return nil
 }
 

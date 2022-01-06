@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/michaeldabbott/standardise/pkg/server"
 )
@@ -17,10 +16,7 @@ func main() {
 
 func run() error {
 	svr := server.NewFactory().Create()
-
 	svr.Router.Get("/new", func(w http.ResponseWriter, r *http.Request) {
-
-		time.Sleep(10000 * time.Second)
 		w.Write([]byte("howdy fucker"))
 	})
 
