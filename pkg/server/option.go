@@ -161,11 +161,11 @@ func WithRouter(rf func() Handler) FactoryOption { return routerOption{rf} }
 
 type tracerOption struct{ tracer opentracing.Tracer }
 
-func (t tracerOption) apply(f *factory) {
-	if t.tracer != nil {
-		f.tracer = t.tracer
-	}
-}
+//func (t tracerOption) apply(f *factory) {
+//	if t.tracer != nil {
+//		f.tracer = t.tracer
+//	}
+//}
 
 type loggerOption struct{ logger Logger }
 
